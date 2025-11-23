@@ -106,6 +106,8 @@ sudo systemctl enable php8.5-fpm.service
 sudo systemctl enable redis-server
 sudo systemctl start redis-server
 
+sudo systemctl restart nginx
+
 sudo systemctl start docker
 sudo groupadd docker
 sudo usermod -aG docker $USER
@@ -125,6 +127,9 @@ nvm install lts
 curl -fsSL https://bun.sh/install | bash
 
 sudo apt-get install mariadb-server
+
+sudo apt autoremove -y
+sudo apt autoclean -y
 
 #node -v
 #npm -v
