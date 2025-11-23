@@ -83,7 +83,9 @@ sudo apt install -y nginx sqlite3 imagemagick php8.1-cli php8.1-fpm php8.1-mysql
 
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-sudo snap install vlc postman termius-app --classic
+sudo snap install vlc --classic
+sudo snap install postman --classic
+sudo snap install termius-app --classic
 sudo snap install vault
 
 sudo systemctl start php8.1-fpm.service
@@ -122,7 +124,7 @@ nvm install lts
 
 curl -fsSL https://bun.sh/install | bash
 
-node -v
-npm -v
-php -v
-docker --version
+#node -v
+#npm -v
+#php -v
+#docker --version
