@@ -123,13 +123,17 @@ php composer-setup.php
 php -r "unlink('composer-setup.php');"
 sudo mv composer.phar /usr/local/bin/composer
 
+# Install nvm and bun as current user (NOT as root)
+# Run these commands without sudo
+export NVM_DIR="$HOME/.nvm"
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-\. "$HOME/.nvm/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm install --lts
 
 curl -fsSL https://bun.sh/install | bash
 
-# sudo apt-get install mariadb-server
+# If you want to install MariaDB, uncomment the next line:
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server
 
 sudo apt update
 sudo apt upgrade -y
@@ -138,7 +142,6 @@ sudo apt autoclean -y
 
 
 echo "Installation completed. Please restart your terminal or run 'source ~/.bashrc' to apply nvm."
-echo "Remember run sudo apt-get install mariadb-server if you need a database server."
 
 #node -v
 #npm -v
