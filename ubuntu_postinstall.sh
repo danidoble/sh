@@ -6,6 +6,7 @@
 echo "Installing dependencies..."
 # add ppa for php
 sudo apt update
+sudo apt upgrade -y
 sudo apt install curl gnupg2 ca-certificates lsb-release ubuntu-keyring software-properties-common apt-transport-https gpg wget -y
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -o /etc/apt/keyrings/mariadb-keyring.pgp 'https://mariadb.org/mariadb_release_signing_key.pgp'
@@ -79,7 +80,7 @@ sudo apt update
 
 sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc | cut -f1)
 
-sudo apt install -y nginx sqlite3 imagemagick php8.1-cli php8.1-fpm php8.1-mysql php8.1-curl php8.1-gd php8.1-mbstring php8.1-xml php8.1-zip php8.1-bcmath php8.1-intl php8.1-imagick php8.1-redis php8.1-memcached php8.1-zip php8.1-xml php8.1-common php8.1-sqlite3 php8.1-pgsql php8.1-opcache php8.1-decimal php8.1-apcu php8.2-cli php8.2-fpm php8.2-mysql php8.2-curl php8.2-gd php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-intl php8.2-imagick php8.2-redis php8.2-memcached php8.2-zip php8.2-xml php8.2-common php8.2-sqlite3 php8.2-pgsql php8.2-opcache php8.2-decimal php8.2-apcu php8.3-cli php8.3-fpm php8.3-mysql php8.3-curl php8.3-gd php8.3-mbstring php8.3-xml php8.3-zip php8.3-bcmath php8.3-intl php8.3-imagick php8.3-redis php8.3-memcached php8.3-zip php8.3-xml php8.3-common php8.3-sqlite3 php8.3-pgsql php8.3-opcache php8.3-decimal php8.3-apcu php8.4-cli php8.4-fpm php8.4-mysql php8.4-curl php8.4-gd php8.4-mbstring php8.4-xml php8.4-zip php8.4-bcmath php8.4-intl php8.4-imagick php8.4-redis php8.4-memcached php8.4-zip php8.4-xml php8.4-common php8.4-sqlite3 php8.4-pgsql php8.4-opcache php8.4-decimal php8.4-apcu php8.5-cli php8.5-fpm php8.5-mysql php8.5-curl php8.5-gd php8.5-mbstring php8.5-xml php8.5-zip php8.5-bcmath php8.5-intl php8.5-redis php8.5-zip php8.5-xml php8.5-common php8.5-sqlite3 redis docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin git code dbeaver-ce beekeeper-studio brave-browser virt-manager flatpak gnome-software-plugin-flatpak filezilla webp ffmpeg gnome-shell-extension-manager gnome-tweaks chrome-gnome-shell google-chrome-stable build-essential antigravity
+sudo apt install -y nginx sqlite3 imagemagick php8.1-cli php8.1-fpm php8.1-mysql php8.1-curl php8.1-gd php8.1-mbstring php8.1-xml php8.1-zip php8.1-bcmath php8.1-intl php8.1-imagick php8.1-redis php8.1-memcached php8.1-zip php8.1-xml php8.1-common php8.1-sqlite3 php8.1-pgsql php8.1-opcache php8.1-decimal php8.1-apcu php8.2-cli php8.2-fpm php8.2-mysql php8.2-curl php8.2-gd php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-intl php8.2-imagick php8.2-redis php8.2-memcached php8.2-zip php8.2-xml php8.2-common php8.2-sqlite3 php8.2-pgsql php8.2-opcache php8.2-decimal php8.2-apcu php8.3-cli php8.3-fpm php8.3-mysql php8.3-curl php8.3-gd php8.3-mbstring php8.3-xml php8.3-zip php8.3-bcmath php8.3-intl php8.3-imagick php8.3-redis php8.3-memcached php8.3-zip php8.3-xml php8.3-common php8.3-sqlite3 php8.3-pgsql php8.3-opcache php8.3-decimal php8.3-apcu php8.4-cli php8.4-fpm php8.4-mysql php8.4-curl php8.4-gd php8.4-mbstring php8.4-xml php8.4-zip php8.4-bcmath php8.4-intl php8.4-imagick php8.4-redis php8.4-memcached php8.4-zip php8.4-xml php8.4-common php8.4-sqlite3 php8.4-pgsql php8.4-opcache php8.4-decimal php8.4-apcu php8.5-cli php8.5-fpm php8.5-mysql php8.5-curl php8.5-gd php8.5-mbstring php8.5-xml php8.5-zip php8.5-bcmath php8.5-intl php8.5-redis php8.5-zip php8.5-xml php8.5-common php8.5-sqlite3 redis docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin git code dbeaver-ce beekeeper-studio brave-browser virt-manager flatpak gnome-software-plugin-flatpak filezilla webp ffmpeg gnome-shell-extension-manager gnome-tweaks chrome-gnome-shell google-chrome-stable build-essential antigravity libfuse2 libnss3-tools 
 
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
@@ -87,6 +88,8 @@ sudo snap install vlc --classic
 sudo snap install postman --classic
 sudo snap install termius-app --classic
 sudo snap install vault
+
+sudo usermod -aG www-data nginx
 
 sudo systemctl start php8.1-fpm.service
 sudo systemctl enable php8.1-fpm.service
@@ -122,14 +125,20 @@ sudo mv composer.phar /usr/local/bin/composer
 
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 \. "$HOME/.nvm/nvm.sh"
-nvm install lts
+nvm install --lts
 
 curl -fsSL https://bun.sh/install | bash
 
-sudo apt-get install mariadb-server
+# sudo apt-get install mariadb-server
 
+sudo apt update
+sudo apt upgrade -y
 sudo apt autoremove -y
 sudo apt autoclean -y
+
+
+echo "Installation completed. Please restart your terminal or run 'source ~/.bashrc' to apply nvm."
+echo "Remember run sudo apt-get install mariadb-server if you need a database server."
 
 #node -v
 #npm -v
