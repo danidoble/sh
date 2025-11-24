@@ -123,14 +123,19 @@ php composer-setup.php
 php -r "unlink('composer-setup.php');"
 sudo mv composer.phar /usr/local/bin/composer
 
-# Install nvm and bun as current user (NOT as root)
-# Run these commands without sudo
-export NVM_DIR="$HOME/.nvm"
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install --lts
+# Install nvm and bun as the original user (not as root)
+# Get the original user if script is run with sudo
+if [ -n "$SUDO_USER" ]; then
+    REAL_USER=$SUDO_USER
+else
+    REAL_USER=$USER
+fi
 
-curl -fsSL https://bun.sh/install | bash
+# Install nvm as the real user
+sudo -u $REAL_USER bash -c 'export NVM_DIR="$HOME/.nvm" && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm install --lts'
+
+# Install bun as the real user
+sudo -u $REAL_USER bash -c 'curl -fsSL https://bun.sh/install | bash'
 
 # If you want to install MariaDB, uncomment the next line:
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server
