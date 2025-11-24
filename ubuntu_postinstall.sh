@@ -122,26 +122,27 @@ sudo groupadd docker
 sudo usermod -aG docker $USER
 sudo newgrp docker
 
-
-cd $SUDO_HOME
-php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-php composer-setup.php
-php -r "unlink('composer-setup.php');"
-sudo mv composer.phar /usr/local/bin/composer
-
 # Install nvm and bun as the original user (not as root)
 # Get the original user if script is run with sudo
 if [ -n "$SUDO_USER" ]; then
     REAL_USER=$SUDO_USER
+    REAL_HOME=$(eval echo ~$SUDO_USER)
 else
     REAL_USER=$USER
+    REAL_HOME=$HOME
 fi
 
+cd $REAL_HOME
+sudo -u $REAL_USER php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+sudo -u $REAL_USER php composer-setup.php
+sudo -u $REAL_USER php -r "unlink('composer-setup.php');"
+sudo mv composer.phar /usr/local/bin/composer
+
 # Install nvm as the real user
-sudo -u $REAL_USER bash -c 'export NVM_DIR="$SUDO_HOME/.nvm" && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm install --lts'
+sudo -u $REAL_USER bash -c "export NVM_DIR=\"\$HOME/.nvm\" && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\" && nvm install --lts"
 
 # Install bun as the real user
-sudo -u $REAL_USER bash -c 'curl -fsSL https://bun.sh/install | bash'
+sudo -u $REAL_USER bash -c "curl -fsSL https://bun.sh/install | bash"
 
 # If you want to install MariaDB, uncomment the next line:
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server
@@ -154,7 +155,8 @@ sudo apt autoclean -y
 
 echo "Installation completed. Please restart your terminal or run 'source ~/.bashrc' to apply nvm."
 
-#node -v
-#npm -v
-#php -v
-#docker --version
+# nvm -v
+# node -v
+# npm -v
+# php -v
+# docker --version
