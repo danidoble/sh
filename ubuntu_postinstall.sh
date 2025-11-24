@@ -1,6 +1,12 @@
 #!/bin/bash
 
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run with sudo"
+  exit 1
+fi
+
 # HOME -> user home directory
+SUDO_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
 
 # Install dependencies
 echo "Installing dependencies..."
@@ -117,7 +123,7 @@ sudo usermod -aG docker $USER
 sudo newgrp docker
 
 
-cd $HOME
+cd $SUDO_HOME
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 php composer-setup.php
 php -r "unlink('composer-setup.php');"
@@ -132,7 +138,7 @@ else
 fi
 
 # Install nvm as the real user
-sudo -u $REAL_USER bash -c 'export NVM_DIR="$HOME/.nvm" && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm install --lts'
+sudo -u $REAL_USER bash -c 'export NVM_DIR="$SUDO_HOME/.nvm" && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm install --lts'
 
 # Install bun as the real user
 sudo -u $REAL_USER bash -c 'curl -fsSL https://bun.sh/install | bash'
