@@ -153,7 +153,7 @@ install_packages() {
     local PHP_PACKAGES=()
     for version in "${PHP_VERSIONS[@]}"; do
         for ext in "${PHP_EXTENSIONS[@]}"; do
-            if [[ "$version" == "8.5" ]] && [[ "$ext" == "imagick" || "$ext" == "memcached" || "$ext" == "apcu" ]]; then
+            if [[ "$version" == "8.5" ]] && [[ "$ext" == "opcache" ]]; then
                 continue
             fi
             PHP_PACKAGES+=("php${version}-${ext}")
