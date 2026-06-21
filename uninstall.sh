@@ -199,6 +199,9 @@ if confirm "Remove APT repositories and GPG keys added by postinstall.sh?"; then
         dbeaver.list redis.list beekeeper-studio-app.list
         google-chrome.list nginx.list github-cli.list gierens.list
         antigravity.list tailscale.list brave-browser-release.sources
+        dbeaver.sources redis.sources beekeeper-studio-app.sources
+        google-chrome.sources nginx.sources github-cli.sources gierens.sources
+        antigravity.sources tailscale.sources
     )
     for src in "${SOURCES[@]}"; do
         rm -f "/etc/apt/sources.list.d/$src" && log_info "Removed $src" || true
@@ -206,6 +209,7 @@ if confirm "Remove APT repositories and GPG keys added by postinstall.sh?"; then
 
     KEYS=(
         /etc/apt/keyrings/mariadb-keyring.pgp
+        /etc/apt/keyrings/mariadb-keyring.asc
         /usr/share/keyrings/redis-archive-keyring.gpg
         /etc/apt/keyrings/docker.asc
         /usr/share/keyrings/microsoft.gpg

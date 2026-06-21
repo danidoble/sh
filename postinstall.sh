@@ -64,10 +64,10 @@ add_repositories() {
         fi
     }
 
-    _add_key "MariaDB"        'https://mariadb.org/mariadb_release_signing_key.pgp'                                        /etc/apt/keyrings/mariadb-keyring.pgp
+    _add_key "MariaDB"        'https://mariadb.org/mariadb_release_signing_key.pgp'                                        /etc/apt/keyrings/mariadb-keyring.asc
     _add_key "Redis"          https://packages.redis.io/gpg                                                                /usr/share/keyrings/redis-archive-keyring.gpg true
     _add_key "Docker"         https://download.docker.com/linux/ubuntu/gpg                                                 /etc/apt/keyrings/docker.asc
-    _add_key "DBeaver"        https://dbeaver.io/debs/dbeaver.gpg.key                                                      /usr/share/keyrings/dbeaver.gpg.key
+    _add_key "DBeaver"        https://dbeaver.io/debs/dbeaver.gpg.key                                                      /usr/share/keyrings/dbeaver.gpg.key true
     _add_key "Beekeeper"      https://deb.beekeeperstudio.io/beekeeper.key                                                 /usr/share/keyrings/beekeeper.gpg true
     _add_key "Brave"          https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg             /usr/share/keyrings/brave-browser-archive-keyring.gpg
     _add_key "Antigravity"    https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg                                     /etc/apt/keyrings/antigravity-repo-key.gpg true
@@ -86,7 +86,9 @@ add_repositories() {
         | tee /etc/apt/trusted.gpg.d/google-chrome.gpg >/dev/null || log_warn "Failed to add Chrome key"
 
     chmod a+r  /etc/apt/keyrings/docker.asc
-    chmod 644  /usr/share/keyrings/redis-archive-keyring.gpg \
+    chmod 644  /etc/apt/keyrings/mariadb-keyring.asc \
+               /usr/share/keyrings/redis-archive-keyring.gpg \
+               /usr/share/keyrings/dbeaver.gpg.key \
                /usr/share/keyrings/beekeeper.gpg \
                /usr/share/keyrings/githubcli-archive-keyring.gpg \
                /etc/apt/keyrings/gierens.gpg
@@ -103,11 +105,13 @@ Signed-By: /etc/apt/keyrings/docker.asc
 EOF
 
     tee /etc/apt/sources.list.d/mariadb.sources <<EOF >/dev/null
+# MariaDB 12.3 repository list - created by postinstall.sh
+X-Repolib-Name: MariaDB
 Types: deb
-URIs: https://mirrors.accretive-networks.net/mariadb/repo/11.8/ubuntu
-Suites: noble
+URIs: https://mirrors.accretive-networks.net/mariadb/repo/12.3/ubuntu
+Suites: ${UBUNTU_CODENAME}
 Components: main main/debug
-Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
+Signed-By: /etc/apt/keyrings/mariadb-keyring.asc
 EOF
 
     tee /etc/apt/sources.list.d/vscode.sources <<EOF >/dev/null
@@ -143,6 +147,12 @@ EOF
     add-apt-repository ppa:ondrej/php   -y || log_warn "Failed to add PHP PPA"
     add-apt-repository ppa:git-core/ppa -y || log_warn "Failed to add Git PPA"
     add-apt-repository ppa:xtradeb/apps -y || log_warn "Failed to add XtraDEB PPA"
+
+    if apt --help 2>&1 | grep -q "modernize-sources"; then
+        DEBIAN_FRONTEND=noninteractive apt -y modernize-sources || log_warn "apt modernize-sources failed"
+    else
+        log_info "apt modernize-sources not available on this apt version — skipping"
+    fi
 
     log_info "Repositories added"
 }

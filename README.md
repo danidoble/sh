@@ -45,7 +45,7 @@ The uninstall script removes (with interactive confirmation per section):
   - Extensions: `cli`, `fpm`, `mysql`, `curl`, `gd`, `mbstring`, `xml`, `zip`, `bcmath`, `intl`, `imagick`, `redis`, `memcached`, `common`, `sqlite3`, `pgsql`, `opcache`, `decimal`, `apcu`
   - Note: `opcache` is bundled in PHP 8.5+ and skipped automatically
 - **Nginx**: Latest stable from nginx.org (pinned over distro package)
-- **MariaDB 11.8**: Latest stable from official repository
+- **MariaDB 12.3**: From the official MariaDB repository
 - **Redis**: Latest from official repository
 - **SQLite3** and **ImageMagick**
 
