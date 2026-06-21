@@ -68,11 +68,13 @@ if confirm "Remove APT packages added by postinstall.sh?"; then
         # GNOME extras
         gnome-shell-extension-manager flameshot copyq dconf-editor
         # System
-        antigravity
+        dnsmasq
         # Security
         fail2ban clamav clamav-daemon lynis rkhunter auditd audispd-plugins libpam-pwquality
         # CLI
         btop git-delta direnv fzf ripgrep fd-find bat trash-cli ncdu tmux httpie jq
+        # C/Python development dependencies
+        gcc g++ make cmake pkg-config gdb valgrind python3-venv python3-pip python3-dev
         # MariaDB
         mariadb-server mariadb-client
         # Redis
@@ -110,14 +112,14 @@ fi
 
 if confirm "Remove user-installed binaries from /usr/local/bin?"; then
     log_section "Removing binaries from /usr/local/bin"
-    for bin in composer mkcert lazygit lazydocker kubectl k9s ctop gitleaks; do
+    for bin in composer mkcert lazygit lazydocker kubectl k9s ctop gitleaks codex claude opencode antigravity cursor; do
         rm -f "/usr/local/bin/$bin" && log_info "Removed $bin" || true
     done
 fi
 
 # ─── 5. User-level tools (home directory) ────────────────────────────────────
 
-if confirm "Remove user-level tools (~/.nvm, ~/.oh-my-zsh, ~/.local/bin/mise, ~/.bun, ~/.cargo/bin/atuin, ~/.local/bin/zoxide, ~/.local/bin/uv)?"; then
+if confirm "Remove user-level tools (~/.nvm, ~/.oh-my-zsh, ~/.local/bin/mise, ~/.bun, ~/.cargo/bin/atuin, ~/.local/bin/zoxide, ~/.local/bin/uv, AI coding CLIs)?"; then
     log_section "Removing user-level tools"
     rm -rf \
         "$REAL_HOME/.nvm" \
@@ -125,6 +127,16 @@ if confirm "Remove user-level tools (~/.nvm, ~/.oh-my-zsh, ~/.local/bin/mise, ~/
         "$REAL_HOME/.local/bin/mise" \
         "$REAL_HOME/.local/bin/zoxide" \
         "$REAL_HOME/.local/bin/uv" \
+        "$REAL_HOME/.local/bin/codex" \
+        "$REAL_HOME/.local/bin/claude" \
+        "$REAL_HOME/.local/bin/opencode" \
+        "$REAL_HOME/.local/bin/antigravity" \
+        "$REAL_HOME/.local/bin/cursor" \
+        "$REAL_HOME/.codex" \
+        "$REAL_HOME/.claude" \
+        "$REAL_HOME/.opencode" \
+        "$REAL_HOME/.antigravity" \
+        "$REAL_HOME/.cursor" \
         "$REAL_HOME/.bun" \
         "$REAL_HOME/.cargo/bin/atuin" \
         "$REAL_HOME/.config/atuin" \
@@ -135,10 +147,34 @@ if confirm "Remove user-level tools (~/.nvm, ~/.oh-my-zsh, ~/.local/bin/mise, ~/
     log_info "User-level tools removed"
 fi
 
-# ─── 6. Dotfile additions ────────────────────────────────────────────────────
+# ─── 6. Local development DNS ────────────────────────────────────────────────
+
+if confirm "Remove local development DNS config for .test and .local?"; then
+    log_section "Removing local development DNS configuration"
+
+    rm -f /etc/dnsmasq.d/local-dev-domains.conf
+    rm -f /etc/systemd/resolved.conf.d/local-dev-domains.conf
+
+    latest_resolv_bak=$(ls -t /etc/resolv.conf.bak.postinstall.* 2>/dev/null | head -1)
+    if [ -n "$latest_resolv_bak" ]; then
+        cp "$latest_resolv_bak" /etc/resolv.conf
+        log_info "Restored /etc/resolv.conf from $latest_resolv_bak"
+    else
+        log_warn "No postinstall resolv.conf backup found"
+    fi
+
+    systemctl restart systemd-resolved 2>/dev/null || true
+    systemctl restart dnsmasq 2>/dev/null || true
+    log_info "Local development DNS config removed"
+fi
+
+# ─── 7. Dotfile additions ────────────────────────────────────────────────────
 
 if confirm "Remove postinstall.sh additions from .zshrc and .bashrc?"; then
     log_section "Cleaning dotfiles"
+    rm -f "$REAL_HOME/.shell_aliases"
+    log_info "Removed $REAL_HOME/.shell_aliases"
+
     for rcfile in "$REAL_HOME/.zshrc" "$REAL_HOME/.bashrc"; do
         if [ -f "$rcfile" ] && grep -q "postinstall.sh additions" "$rcfile"; then
             # Remove the block between the marker and the closing marker
@@ -153,7 +189,7 @@ if confirm "Remove postinstall.sh additions from .zshrc and .bashrc?"; then
     log_info "Default shell restored to bash"
 fi
 
-# ─── 7. APT repositories and GPG keys ────────────────────────────────────────
+# ─── 8. APT repositories and GPG keys ────────────────────────────────────────
 
 if confirm "Remove APT repositories and GPG keys added by postinstall.sh?"; then
     log_section "Removing APT sources and keys"
@@ -198,7 +234,7 @@ if confirm "Remove APT repositories and GPG keys added by postinstall.sh?"; then
     log_info "Repositories cleaned"
 fi
 
-# ─── 8. Security configurations ──────────────────────────────────────────────
+# ─── 9. Security configurations ──────────────────────────────────────────────
 
 if confirm "Restore security configurations (SSH, sysctl, fail2ban, modprobe, pwquality)?"; then
     log_section "Restoring security configurations"
@@ -225,7 +261,7 @@ if confirm "Restore security configurations (SSH, sysctl, fail2ban, modprobe, pw
     log_info "Filesystem disable rules removed"
 fi
 
-# ─── 9. Samba ────────────────────────────────────────────────────────────────
+# ─── 10. Samba ───────────────────────────────────────────────────────────────
 
 if confirm "Restore Samba config from backup?"; then
     log_section "Restoring Samba configuration"
@@ -244,7 +280,7 @@ if confirm "Remove Samba share directory (/srv/samba/shared)? THIS DELETES DATA.
     log_info "/srv/samba/shared removed"
 fi
 
-# ─── 10. UFW rules ───────────────────────────────────────────────────────────
+# ─── 11. UFW rules ───────────────────────────────────────────────────────────
 
 if confirm "Remove UFW rules added by postinstall.sh (Samba, 80, 443)?"; then
     log_section "Removing UFW rules"

@@ -184,7 +184,8 @@ install_packages() {
         docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
         # Development tools
-        git gh code dbeaver-ce beekeeper-studio build-essential eza
+        git gh code dbeaver-ce beekeeper-studio build-essential
+        gcc g++ make cmake pkg-config gdb valgrind python3-venv python3-pip python3-dev eza
 
         # Browsers
         brave-browser google-chrome-stable
@@ -196,7 +197,7 @@ install_packages() {
         flatpak gnome-software-plugin-flatpak
 
         # Network tools
-        filezilla net-tools nmap dnsutils samba samba-common-bin
+        filezilla net-tools nmap dnsutils dnsmasq samba samba-common-bin
 
         # VPN
         tailscale wireguard wireguard-tools
@@ -209,7 +210,7 @@ install_packages() {
         flameshot copyq dconf-editor
 
         # System utilities
-        antigravity libfuse2 libnss3-tools
+        libfuse2 libnss3-tools
 
         # CLI utilities
         btop neofetch jq httpie tree ncdu tmux
@@ -282,6 +283,48 @@ configure_services() {
     systemctl enable --now auditd          || log_warn "auditd"
 
     log_info "Services configured"
+}
+
+configure_local_dev_dns() {
+    log_section "Configuring local development DNS"
+
+    install -d -m 0755 /etc/dnsmasq.d /etc/systemd/resolved.conf.d
+
+    tee /etc/dnsmasq.d/local-dev-domains.conf <<'EOF' >/dev/null
+# Added by postinstall.sh
+# Resolve any depth of .test and .local names to localhost:
+# app.test, api.app.test, foo.sub.domain.test, app.local, etc.
+listen-address=127.0.0.1
+bind-interfaces
+port=53
+domain-needed
+bogus-priv
+address=/.test/127.0.0.1
+address=/.local/127.0.0.1
+EOF
+
+    tee /etc/systemd/resolved.conf.d/local-dev-domains.conf <<'EOF' >/dev/null
+# Added by postinstall.sh
+# Route only these development domains to local dnsmasq.
+[Resolve]
+DNS=127.0.0.1
+Domains=~test ~local
+DNSSEC=no
+Cache=yes
+EOF
+
+    if [ -e /etc/resolv.conf ] && [ ! -L /etc/resolv.conf ]; then
+        cp /etc/resolv.conf "/etc/resolv.conf.bak.postinstall.$(date +%Y%m%d%H%M%S)"
+    fi
+
+    ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
+    systemctl enable --now systemd-resolved || log_warn "Could not enable systemd-resolved"
+    systemctl restart systemd-resolved      || log_warn "Could not restart systemd-resolved"
+    systemctl enable --now dnsmasq          || log_warn "Could not enable dnsmasq"
+    systemctl restart dnsmasq               || log_warn "Could not restart dnsmasq"
+
+    log_info "Local DNS configured: *.test and *.local resolve to 127.0.0.1"
 }
 
 # ─── 6. Samba ────────────────────────────────────────────────────────────────
@@ -475,10 +518,52 @@ install_user_tools() {
         sudo -u "$REAL_USER" bash -c '
             export NVM_DIR="$HOME/.nvm"
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm install --lts
         ' || log_warn "NVM install failed"
     else
         log_info "NVM already installed"
+    fi
+
+    sudo -u "$REAL_USER" bash -c '
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm install --lts && nvm alias default lts/*
+    ' || log_warn "Node.js LTS install failed"
+
+    # pnpm via Corepack
+    sudo -u "$REAL_USER" bash -c '
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+        command -v corepack >/dev/null 2>&1 && corepack enable pnpm
+    ' || log_warn "Could not enable pnpm with Corepack"
+
+    # AI coding CLIs
+    if ! sudo -u "$REAL_USER" bash -c 'command -v codex' &>/dev/null; then
+        sudo -u "$REAL_USER" bash -c "curl -fsSL https://chatgpt.com/codex/install.sh | sh" || log_warn "Codex CLI"
+    else
+        log_info "Codex CLI already installed"
+    fi
+
+    if ! sudo -u "$REAL_USER" bash -c 'command -v claude' &>/dev/null; then
+        sudo -u "$REAL_USER" bash -c "curl -fsSL https://claude.ai/install.sh | bash" || log_warn "Claude CLI"
+    else
+        log_info "Claude CLI already installed"
+    fi
+
+    if ! sudo -u "$REAL_USER" bash -c 'command -v opencode' &>/dev/null; then
+        sudo -u "$REAL_USER" bash -c "curl -fsSL https://opencode.ai/install | bash" || log_warn "opencode CLI"
+    else
+        log_info "opencode CLI already installed"
+    fi
+
+    if ! sudo -u "$REAL_USER" bash -c 'command -v antigravity' &>/dev/null; then
+        sudo -u "$REAL_USER" bash -c "curl -fsSL https://antigravity.google/cli/install.sh | bash" || log_warn "Antigravity CLI"
+    else
+        log_info "Antigravity CLI already installed"
+    fi
+
+    if ! sudo -u "$REAL_USER" bash -c 'command -v cursor' &>/dev/null; then
+        sudo -u "$REAL_USER" bash -c "curl https://cursor.com/install -fsS | bash" || log_warn "Cursor"
+    else
+        log_info "Cursor already installed"
     fi
 
     # Bun
@@ -661,6 +746,69 @@ configure_dotfiles() {
 
     local ZSHRC="$REAL_HOME/.zshrc"
     local BASHRC="$REAL_HOME/.bashrc"
+    local ALIASES_FILE="$REAL_HOME/.shell_aliases"
+
+    [ -f "$ZSHRC" ] || install -o "$REAL_USER" -g "$REAL_USER" -m 0644 /dev/null "$ZSHRC"
+    [ -f "$BASHRC" ] || install -o "$REAL_USER" -g "$REAL_USER" -m 0644 /dev/null "$BASHRC"
+
+    tee "$ALIASES_FILE" <<'ALIASEOF' >/dev/null
+# ── postinstall.sh shared aliases ───────────────────────────
+alias ls="eza --icons"
+alias ll="eza -la --icons --git"
+alias lt="eza --tree --icons"
+alias cat="bat --style=plain"
+alias find="fd"
+alias grep="rg"
+alias cd="z"
+alias top="btop"
+alias lg="lazygit"
+alias ld="lazydocker"
+alias dk="docker"
+alias dkc="docker compose"
+
+alias nrb='npm run build'
+alias pnrb='pnpm run build'
+alias brb='bun run build'
+alias pnpmr='pnpm run'
+alias bunr='bun run'
+alias aptup='sudo apt update && sudo apt upgrade -y && sudo apt-get update && sudo apt-get upgrade -y && sudo apt update && sudo apt upgrade -y && sudo snap refresh && sudo flatpak update -y && sudo apt autoremove -y && sudo apt autoclean -y'
+
+# Laravel Artisan
+alias art="php artisan"
+alias artisan="php artisan"
+alias pa='php artisan'
+alias pam='php artisan migrate'
+alias pamf='php artisan migrate:fresh'
+alias pamfs='php artisan migrate:fresh --seed'
+alias pamr='php artisan migrate:rollback'
+alias pas='php artisan serve'
+alias pat='php artisan test'
+alias pac='php artisan cache:clear'
+alias parl='php artisan route:list'
+alias pamk='php artisan make:model'
+alias optimize='php artisan optimize'
+alias optimizeclear='php artisan optimize:clear'
+alias tinker='php artisan tinker'
+
+# Composer
+alias cda='composer dump-autoload -o'
+alias ci='composer install'
+alias cu='composer update'
+alias cr='composer require'
+
+# Laravel Sail
+alias sail='./vendor/bin/sail'
+alias sailup='sail up -d'
+alias saildown='sail down'
+alias sailart='sail artisan'
+
+alias wip="git add . && git commit -m 'wip'"
+alias nah="git reset --hard && git clean -df"
+alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+# ─────────────────────────────────────────────────────────────
+ALIASEOF
+    chown "$REAL_USER:$REAL_USER" "$ALIASES_FILE"
+    log_info "Shared aliases written to $ALIASES_FILE"
 
     # Zsh config block
     local ZSH_BLOCK
@@ -676,18 +824,7 @@ eval "$(direnv hook zsh)"
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
 
-alias ls="eza --icons"
-alias ll="eza -la --icons --git"
-alias lt="eza --tree --icons"
-alias cat="bat --style=plain"
-alias find="fd"
-alias grep="rg"
-alias cd="z"
-alias top="btop"
-alias lg="lazygit"
-alias ld="lazydocker"
-alias dk="docker"
-alias dkc="docker compose"
+[ -f "$HOME/.shell_aliases" ] && source "$HOME/.shell_aliases"
 
 export PATH="$HOME/.local/bin:$HOME/.bun/bin:$PATH"
 # plugins=(git zsh-autosuggestions zsh-syntax-highlighting fzf direnv)
@@ -707,11 +844,9 @@ eval "$(direnv hook bash)"
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
-alias ls="eza --icons"
-alias ll="eza -la --icons --git"
-alias cat="bat --style=plain"
-alias lg="lazygit"
-alias ld="lazydocker"
+[ -f "$HOME/.shell_aliases" ] && source "$HOME/.shell_aliases"
+
+export PATH="$HOME/.local/bin:$HOME/.bun/bin:$PATH"
 # ─────────────────────────────────────────────────────────────
 BASHEOF
 )
@@ -800,6 +935,7 @@ main() {
     install_packages
     install_mariadb
     configure_services
+    configure_local_dev_dns
     configure_samba
     configure_security
     install_snap_packages

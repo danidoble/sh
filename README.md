@@ -30,8 +30,9 @@ sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/danidoble/sh/main/u
 The uninstall script removes (with interactive confirmation per section):
 - APT packages, snap packages, and Flatpak apps
 - User-level binaries (`/usr/local/bin`: composer, mkcert, lazygit, lazydocker, kubectl, k9s, ctop, gitleaks)
-- User-level tools (`~/.nvm`, `~/.oh-my-zsh`, `~/.local/bin/mise`, `~/.bun`, `~/.cargo/bin/atuin`, `~/.local/bin/zoxide`, `~/.local/bin/uv`)
-- `postinstall.sh` additions from `.zshrc` and `.bashrc` (restores default shell to bash)
+- User-level tools (`~/.nvm`, `~/.oh-my-zsh`, `~/.local/bin/mise`, `~/.bun`, `~/.cargo/bin/atuin`, `~/.local/bin/zoxide`, `~/.local/bin/uv`, Codex, Claude, opencode, Antigravity, Cursor)
+- Local development DNS configuration for `.test` and `.local`
+- `postinstall.sh` additions from `.zshrc` and `.bashrc`, plus `~/.shell_aliases` (restores default shell to bash)
 - APT repositories and GPG keys
 - Security configurations (SSH backup restore, sysctl hardening, fail2ban jail, modprobe rules)
 - Samba config (restored from backup) and optional share directory removal
@@ -58,11 +59,15 @@ The uninstall script removes (with interactive confirmation per section):
 ### Development Tools
 - **Composer**: PHP dependency manager (signature-verified install)
 - **NVM** + Node.js LTS
+- **pnpm** enabled through Corepack (`corepack enable pnpm`)
 - **Bun**: Fast JavaScript runtime
 - **Git**: Latest from `ppa:git-core/ppa`
 - **GitHub CLI** (`gh`)
 - **mise**: Universal version manager
 - **uv**: Fast Python package manager
+- **C/C++ build dependencies**: `build-essential`, `gcc`, `g++`, `make`, `cmake`, `pkg-config`, `gdb`, `valgrind`
+- **Python development helpers**: `python3-venv`, `python3-pip`, `python3-dev`
+- **AI coding CLIs**: Codex, Claude, opencode, Antigravity
 - **Visual Studio Code**
 - **DBeaver Community Edition**
 - **Beekeeper Studio**
@@ -93,12 +98,14 @@ The uninstall script removes (with interactive confirmation per section):
 ### Networking & VPN
 - **Tailscale**: Mesh VPN (daemon started; run `sudo tailscale up` to authenticate)
 - **WireGuard** + `wireguard-tools`
+- **dnsmasq + systemd-resolved**: wildcard local development DNS for `*.test` and `*.local`
 - **Samba**: File sharing with a pre-configured `/srv/samba/shared` share
 - `nmap`, `net-tools`, `dnsutils`, `filezilla`
 
 ### Desktop Applications
 - Brave Browser
 - Google Chrome
+- Cursor
 - **Snap**: VLC, Postman, Termius, Vault
 - **Flatpak (Flathub)**: Obsidian, Bruno
 - **GNOME**: Extension Manager, Tweaks, Chrome GNOME Shell, Flameshot, CopyQ, dconf-editor
@@ -136,6 +143,8 @@ The script automatically enables and starts:
 - Redis Server
 - Nginx
 - Docker
+- dnsmasq
+- systemd-resolved
 - Tailscale (`tailscaled`)
 - Samba (`smbd`, `nmbd`)
 - UFW (Firewall)
@@ -153,23 +162,21 @@ Your user is automatically added to:
 
 ## 🐚 Shell Configuration
 
-The script configures Zsh (set as default shell) and Bash with the following additions:
+The script configures Zsh (set as default shell) and Bash with shared aliases and shell integrations.
 
 ### Aliases
-| Alias | Command |
-|-------|---------|
-| `ls` | `eza --icons` |
-| `ll` | `eza -la --icons --git` |
-| `lt` | `eza --tree --icons` |
-| `cat` | `bat --style=plain` |
-| `find` | `fd` |
-| `grep` | `rg` |
-| `cd` | `z` (zoxide) |
-| `top` | `btop` |
-| `lg` | `lazygit` |
-| `ld` | `lazydocker` |
-| `dk` | `docker` |
-| `dkc` | `docker compose` |
+
+Aliases are written to `~/.shell_aliases` and sourced from both `~/.zshrc` and `~/.bashrc`, so the same shortcuts work in either shell.
+
+Included alias groups:
+- Modern CLI replacements: `ls`, `ll`, `lt`, `cat`, `find`, `grep`, `cd`, `top`
+- Docker and TUI helpers: `dk`, `dkc`, `lg`, `ld`
+- JavaScript build helpers: `nrb`, `pnrb`, `brb`, `pnpmr`, `bunr`
+- System update helper: `aptup`
+- Laravel Artisan shortcuts: `art`, `artisan`, `pa`, `pam`, `pamf`, `pamfs`, `pamr`, `pas`, `pat`, `pac`, `parl`, `pamk`, `optimize`, `optimizeclear`, `tinker`
+- Composer shortcuts: `cda`, `ci`, `cu`, `cr`
+- Laravel Sail shortcuts: `sail`, `sailup`, `saildown`, `sailart`
+- Git shortcuts: `wip`, `nah`, `gl`
 
 ### Integrations (Zsh)
 - `starship` prompt
@@ -178,6 +185,19 @@ The script configures Zsh (set as default shell) and Bash with the following add
 - `atuin` shell history
 - `direnv` environment switching
 - `fzf` fuzzy finder
+
+## 🌐 Local Development DNS
+
+The script configures `dnsmasq` together with Ubuntu's `systemd-resolved` so development domains do not need entries in `/etc/hosts`.
+
+- `dnsmasq` answers any depth of `.test` and `.local` with `127.0.0.1`
+- `systemd-resolved` routes only `~test` and `~local` to local dnsmasq
+- Supported examples: `app.test`, `api.app.test`, `foo.sub.domain.test`, `app.local`, `foo.sub.domain.local`
+- Config files:
+  - `/etc/dnsmasq.d/local-dev-domains.conf`
+  - `/etc/systemd/resolved.conf.d/local-dev-domains.conf`
+
+This keeps Ubuntu's normal DNS flow through `systemd-resolved` while adding wildcard local domains for development.
 
 ## ⚠️ Important Notes
 
@@ -208,10 +228,21 @@ docker compose version
 
 # Node.js (new terminal or after sourcing .zshrc)
 node --version && npm --version
+pnpm --version
+
+# Local development DNS
+resolvectl query app.test
+resolvectl query foo.sub.domain.test
+resolvectl query app.local
 
 # Developer tools
 composer --version
 gh --version
+codex --version
+claude --version
+opencode --version
+antigravity --version
+cursor --version
 lazygit --version
 lazydocker --version
 k9s version
@@ -235,6 +266,13 @@ newgrp docker   # or log out and back in
 ### NVM / Node not found
 ```bash
 source ~/.zshrc   # or restart terminal
+```
+
+### `.test` / `.local` domains not resolving
+```bash
+sudo systemctl status dnsmasq systemd-resolved
+resolvectl domain
+resolvectl query foo.sub.domain.test
 ```
 
 ### Service not starting
@@ -274,7 +312,7 @@ This script is provided as-is for personal and educational use.
 
 ## ⚡ Post-Installation Steps
 
-1. **Restart your terminal** or run `source ~/.zshrc`
+1. **Restart your terminal** or run `source ~/.zshrc` / `source ~/.bashrc`
 2. **Log out and back in** for group changes (`docker`, `sambashare`) to take effect
 3. **Authenticate Tailscale**: `sudo tailscale up`
 4. **Set Samba password**: `sudo smbpasswd -a $USER`
