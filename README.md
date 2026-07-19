@@ -30,7 +30,7 @@ sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/danidoble/sh/main/u
 The uninstall script removes (with interactive confirmation per section):
 - APT packages, snap packages, and Flatpak apps
 - User-level binaries (`/usr/local/bin`: composer, mkcert, lazygit, lazydocker, kubectl, k9s, ctop, gitleaks)
-- User-level tools (`~/.nvm`, `~/.oh-my-zsh`, `~/.local/bin/mise`, `~/.bun`, `~/.cargo/bin/atuin`, `~/.local/bin/zoxide`, `~/.local/bin/uv`, Codex, Claude, opencode, Antigravity, Cursor)
+- User-level tools (`~/.nvm`, `~/.oh-my-zsh`, `~/.local/bin/mise`, `~/.bun`, `~/.local/bin/zoxide`, `~/.local/bin/uv`, Codex, Claude, opencode, Cursor)
 - Local development DNS configuration for `.test` and `.local`
 - `postinstall.sh` additions from `.zshrc` and `.bashrc`, plus `~/.shell_aliases` (restores default shell to bash)
 - APT repositories and GPG keys
@@ -67,7 +67,7 @@ The uninstall script removes (with interactive confirmation per section):
 - **uv**: Fast Python package manager
 - **C/C++ build dependencies**: `build-essential`, `gcc`, `g++`, `make`, `cmake`, `pkg-config`, `gdb`, `valgrind`
 - **Python development helpers**: `python3-venv`, `python3-pip`, `python3-dev`
-- **AI coding CLIs**: Codex, Claude, opencode, Antigravity
+- **AI coding CLIs**: Codex, Claude, opencode
 - **Visual Studio Code**
 - **DBeaver Community Edition**
 - **Beekeeper Studio**
@@ -79,8 +79,7 @@ The uninstall script removes (with interactive confirmation per section):
 - **Terminal multiplexer**: tmux
 - **Modern replacements**: `eza` (ls), `bat` (cat), `ripgrep` (grep), `fd-find` (find), `zoxide` (cd)
 - **TUI tools**: `btop` (top), `lazygit`, `lazydocker`, `k9s` (Kubernetes), `ctop` (Docker), `dive` (Docker images)
-- **History**: `atuin` (AI disabled, sync off by default)
-- **Other**: `fzf`, `git-delta`, `direnv`, `neofetch`, `jq`, `httpie`, `ncdu`, `tree`, `tmux`, `trash-cli`, `rsync`, `unzip`, `p7zip-full`
+- **Other**: `fzf`, `git-delta`, `direnv`, `fastfetch`, `jq`, `httpie`, `ncdu`, `tree`, `tmux`, `trash-cli`, `rsync`, `unzip`, `p7zip-full`
 
 ### Security Tools
 - **ufw**: Firewall (enabled, rules: SSH, 80/tcp, 443/tcp, Samba)
@@ -107,10 +106,9 @@ The uninstall script removes (with interactive confirmation per section):
 - Google Chrome
 - Cursor
 - **Snap**: VLC, Postman, Termius, Vault
-- **Flatpak (Flathub)**: Obsidian, Bruno
-- **GNOME**: Extension Manager, Tweaks, Chrome GNOME Shell, Flameshot, CopyQ, dconf-editor
+- **Flatpak (Flathub)**: Obsidian
+- **GNOME**: Extension Manager, Tweaks, Chrome GNOME Shell, dconf-editor
 - virt-manager (KVM/QEMU)
-- Antigravity
 
 ## ⚙️ Prerequisites
 
@@ -182,7 +180,6 @@ Included alias groups:
 - `starship` prompt
 - `zoxide` smart directory jumping
 - `mise` version manager activation
-- `atuin` shell history
 - `direnv` environment switching
 - `fzf` fuzzy finder
 
@@ -241,14 +238,12 @@ gh --version
 codex --version
 claude --version
 opencode --version
-antigravity --version
 cursor --version
 lazygit --version
 lazydocker --version
 k9s version
 kubectl version --client
 mise --version
-atuin --version
 gitleaks version
 
 # Security

@@ -66,7 +66,7 @@ if confirm "Remove APT packages added by postinstall.sh?"; then
         # VPN
         tailscale
         # GNOME extras
-        gnome-shell-extension-manager flameshot copyq dconf-editor
+        gnome-shell-extension-manager dconf-editor
         # System
         dnsmasq
         # Security
@@ -102,24 +102,23 @@ fi
 
 # ─── 3. Flatpak apps ─────────────────────────────────────────────────────────
 
-if confirm "Remove Flatpak apps (Obsidian, Bruno)?"; then
+if confirm "Remove Flatpak apps (Obsidian)?"; then
     log_section "Removing Flatpak apps"
     sudo -u "$REAL_USER" flatpak uninstall -y md.obsidian.Obsidian 2>/dev/null || log_warn "Obsidian not found"
-    sudo -u "$REAL_USER" flatpak uninstall -y com.usebruno.Bruno   2>/dev/null || log_warn "Bruno not found"
 fi
 
 # ─── 4. User-installed binaries ──────────────────────────────────────────────
 
 if confirm "Remove user-installed binaries from /usr/local/bin?"; then
     log_section "Removing binaries from /usr/local/bin"
-    for bin in composer mkcert lazygit lazydocker kubectl k9s ctop gitleaks codex claude opencode antigravity cursor; do
+    for bin in composer mkcert lazygit lazydocker kubectl k9s ctop gitleaks codex claude opencode cursor; do
         rm -f "/usr/local/bin/$bin" && log_info "Removed $bin" || true
     done
 fi
 
 # ─── 5. User-level tools (home directory) ────────────────────────────────────
 
-if confirm "Remove user-level tools (~/.nvm, ~/.oh-my-zsh, ~/.local/bin/mise, ~/.bun, ~/.cargo/bin/atuin, ~/.local/bin/zoxide, ~/.local/bin/uv, AI coding CLIs)?"; then
+if confirm "Remove user-level tools (~/.nvm, ~/.oh-my-zsh, ~/.local/bin/mise, ~/.bun, ~/.local/bin/zoxide, ~/.local/bin/uv, AI coding CLIs)?"; then
     log_section "Removing user-level tools"
     rm -rf \
         "$REAL_HOME/.nvm" \
@@ -130,16 +129,12 @@ if confirm "Remove user-level tools (~/.nvm, ~/.oh-my-zsh, ~/.local/bin/mise, ~/
         "$REAL_HOME/.local/bin/codex" \
         "$REAL_HOME/.local/bin/claude" \
         "$REAL_HOME/.local/bin/opencode" \
-        "$REAL_HOME/.local/bin/antigravity" \
         "$REAL_HOME/.local/bin/cursor" \
         "$REAL_HOME/.codex" \
         "$REAL_HOME/.claude" \
         "$REAL_HOME/.opencode" \
-        "$REAL_HOME/.antigravity" \
         "$REAL_HOME/.cursor" \
         "$REAL_HOME/.bun" \
-        "$REAL_HOME/.cargo/bin/atuin" \
-        "$REAL_HOME/.config/atuin" \
         "$REAL_HOME/.config/starship.toml" \
         2>/dev/null || true
 
@@ -197,11 +192,12 @@ if confirm "Remove APT repositories and GPG keys added by postinstall.sh?"; then
     SOURCES=(
         docker.sources mariadb.sources vscode.sources
         dbeaver.list redis.list beekeeper-studio-app.list
+        php.list php.sources
         google-chrome.list nginx.list github-cli.list gierens.list
-        antigravity.list tailscale.list brave-browser-release.sources
+        tailscale.list brave-browser-release.sources
         dbeaver.sources redis.sources beekeeper-studio-app.sources
         google-chrome.sources nginx.sources github-cli.sources gierens.sources
-        antigravity.sources tailscale.sources
+        tailscale.sources
     )
     for src in "${SOURCES[@]}"; do
         rm -f "/etc/apt/sources.list.d/$src" && log_info "Removed $src" || true
@@ -216,16 +212,18 @@ if confirm "Remove APT repositories and GPG keys added by postinstall.sh?"; then
         /usr/share/keyrings/dbeaver.gpg.key
         /usr/share/keyrings/beekeeper.gpg
         /usr/share/keyrings/brave-browser-archive-keyring.gpg
-        /etc/apt/keyrings/antigravity-repo-key.gpg
         /usr/share/keyrings/nginx-archive-keyring.gpg
         /etc/apt/trusted.gpg.d/google-chrome.gpg
         /usr/share/keyrings/githubcli-archive-keyring.gpg
         /etc/apt/keyrings/gierens.gpg
         /usr/share/keyrings/tailscale-archive-keyring.gpg
+        /usr/share/keyrings/debsuryorg-archive-keyring.gpg
     )
     for key in "${KEYS[@]}"; do
         rm -f "$key" && log_info "Removed $key" || true
     done
+
+    DEBIAN_FRONTEND=noninteractive apt-get remove --purge -y debsuryorg-archive-keyring 2>/dev/null || true
 
     rm -f /etc/apt/preferences.d/99nginx
 
